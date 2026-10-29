@@ -1,40 +1,358 @@
-# jarvitech
+const THEME_KEY = 'jarvis-ui-theme';
+const ACCENT_KEY = 'jarvis-ui-accent';
+const COMPACT_KEY = 'jarvis-ui-compact';
 
-A lightweight HTML/CSS/JavaScript prototype for a simple personal homepage and JARVIS-inspired interface concept.
+const state = {
+  accent: localStorage.getItem(ACCENT_KEY) || 'cyan',
+  theme: localStorage.getItem(THEME_KEY) || 'dark',
+  compact: localStorage.getItem(COMPACT_KEY) === 'true'
+};
 
-## Current status
+function applyUiState() {
+  document.body.dataset.theme = state.theme;
+  document.body.dataset.accent = state.accent;
+  document.body.classList.toggle('compact-mode', state.compact);
 
-This repository is not a complete operating system, native Linux desktop, or bootable Debian image. It is a small static web prototype that demonstrates a possible UI direction for a futuristic desktop-themed experience.
+  document.querySelectorAll('.accent-option').forEach((button) => {
+    const matches = button.dataset.accent === state.accent;
+    button.classList.toggle('active', matches);
+  });
 
-## Project structure
+  const compactToggle = document.getElementById('compactToggle');
+  if (compactToggle) {
+    compactToggle.checked = state.compact;
+  }
+}
 
-- `index.html` — page structure and UI markup
-- `style.css` — visual styling for the existing homepage
-- `note.js` — button interaction logic
-- `README.md` — project documentation
+function showNotification(message) {
+  const stack = document.getElementById('notificationStack');
+  if (!stack) return;
 
-## Current functionality
+  const note = document.createElement('div');
+  note.className = 'notification';
+  note.textContent = message;
+  stack.appendChild(note);
 
-- Simple landing page layout
-- Greeting button updates the page message
-- Static styling for a clean, minimal landing page experience
+  setTimeout(() => {
+    note.remove();
+  }, 2600);
+}
 
-## Known issue fixed
+function updateClock() {
+  const clockEl = document.getElementById('clock');
+  const dateEl = document.getElementById('dateDisplay');
 
-The page originally referenced `script.js`, but the functional JavaScript file in the repository was `note.js`. The page now loads the correct file.
+  if (!clockEl || !dateEl) return;
 
-## Local browser use
+  const now = new Date();
+  const time = now.toLocaleTimeString([], {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
 
-Open `index.html` directly in a browser to test the page locally.
+  const date = now.toLocaleDateString([], {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  });
 
-## Testing checklist
+  clockEl.textContent = time;
+  dateEl.textContent = date;
+}
 
-- [ ] Open `index.html` in a browser.
-- [ ] Confirm the page loads without console errors.
-- [ ] Click the `Click Me` button.
-- [ ] Confirm the message text changes to `Thanks for visiting my homepage! 🎉`.
-- [ ] Verify the page remains readable and usable when resized.
+function activateWindow(target) {
+  const appName = `window-${target}`;
+  const appWindow = document.getElementById(appName);
 
-## Roadmap note
+  document.querySelectorAll('.window').forEach((windowNode) => {
+    const shouldShow = windowNode.id === appName;
+    windowNode.classList.toggle('active', shouldShow);
+    windowNode.classList.remove('is-hidden');
+  });
 
-This prototype can be evolved into a desktop-style interface for a JARVIS OS concept, but future work should be implemented incrementally with lightweight, modular front-end architecture and clear separation between UI, assistant logic, and system integration.
+  document.querySelectorAll('.dock-item, .desktop-icon').forEach((button) => {
+    const matches = button.dataset.target === target;
+    button.classList.toggle('active', matches);
+    button.classList.toggle('is-selected', matches);
+  });
+
+  if (appWindow) {
+    appWindow.classList.add('active');
+  }
+}
+
+function bindWindowActions() {
+  document.querySelectorAll('.window-action').forEach((button) => {
+    button.addEventListener('click', () => {
+      const windowNode = button.closest('.window');
+      if (!windowNode) return;
+
+      const action = button.dataset.windowAction;
+      if (action === 'close') {
+        windowNode.classList.add('is-hidden');
+        windowNode.classList.remove('active');
+        activateWindow('home');
+      }
+
+      if (action === 'minimize') {
+        windowNode.classList.add('is-minimized');
+        windowNode.classList.remove('active');
+        activateWindow('home');
+      }
+    });
+  });
+}
+
+function bindAppButtons() {
+  document.querySelectorAll('[data-target]').forEach((button) => {
+    if (!button.dataset.target) return;
+
+    button.addEventListener('click', () => {
+      const target = button.dataset.target;
+      activateWindow(target);
+    });
+  });
+}
+
+function setupGreeting() {
+  const button = document.getElementById('greetBtn');
+  const message = document.getElementById('message');
+
+  if (!button || !message) return;
+
+  button.addEventListener('click', () => {
+    message.textContent = 'System acknowledged. JARVIS prototype online and ready.';
+    showNotification('Welcome sequence completed.');
+  });
+}
+
+function appendChatMessage(sender, text) {
+  const chatMessages = document.getElementById('chatMessages');
+  if (!chatMessages) return;
+
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble chat-bubble--${sender}`;
+  bubble.textContent = text;
+  chatMessages.appendChild(bubble);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function getAssistantReply(input) {
+  const value = input.trim().toLowerCase();
+
+  if (!value) {
+    return 'I am ready when you are.';
+  }
+
+  if (value.includes('help') || value.includes('commands')) {
+    return 'Try: status, time, home, files, browser, settings, or clear.';
+  }
+
+  if (value.includes('status') || value.includes('system')) {
+    return 'Prototype status is nominal. Core interface modules are active and ready for expansion.';
+  }
+
+  if (value.includes('time')) {
+    return `Current time: ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}.`;
+  }
+
+  if (value.includes('home')) {
+    activateWindow('home');
+    return 'Opening the home dashboard.';
+  }
+
+  if (value.includes('files')) {
+    activateWindow('files');
+    return 'Opening the prototype file manager.';
+  }
+
+  if (value.includes('browser')) {
+    activateWindow('browser');
+    return 'Opening the browser panel.';
+  }
+
+  if (value.includes('settings')) {
+    activateWindow('settings');
+    return 'Opening the settings panel.';
+  }
+
+  if (value.includes('clear')) {
+    return 'clear';
+  }
+
+  if (value.includes('hello') || value.includes('hi')) {
+    return 'Hello. I am the JARVIS prototype assistant shell. Connect a real model behind this interface when ready.';
+  }
+
+  return 'Prototype response received. This interface is ready to connect to a real assistant backend later without changing the UI.';
+}
+
+function setupAssistant() {
+  const chatForm = document.getElementById('chatForm');
+  const chatInput = document.getElementById('chatInput');
+  const clearButton = document.getElementById('clearChatBtn');
+
+  appendChatMessage('assistant', 'Welcome online. I am the JARVIS prototype shell. Ask for help, status, time, or open a workspace panel.');
+
+  chatForm?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    if (!chatInput) return;
+
+    const userText = chatInput.value.trim();
+    if (!userText) return;
+
+    appendChatMessage('user', userText);
+    chatInput.value = '';
+
+    const reply = getAssistantReply(userText);
+    if (reply === 'clear') {
+      const chatMessages = document.getElementById('chatMessages');
+      if (chatMessages) {
+        chatMessages.innerHTML = '';
+      }
+      appendChatMessage('assistant', 'Conversation cleared. Ready for the next prompt.');
+      return;
+    }
+
+    appendChatMessage('assistant', reply);
+  });
+
+  clearButton?.addEventListener('click', () => {
+    const chatMessages = document.getElementById('chatMessages');
+    if (chatMessages) {
+      chatMessages.innerHTML = '';
+    }
+    appendChatMessage('assistant', 'Conversation cleared. Ready for the next prompt.');
+  });
+}
+
+function buildFileBrowser() {
+  const folders = [
+    { name: 'workspace', path: 'workspace', active: true },
+    { name: 'projects', path: 'projects' },
+    { name: 'archives', path: 'archives' }
+  ];
+
+  const filesByFolder = {
+    workspace: [
+      { name: 'README.md', type: 'file' },
+      { name: 'assistant.py', type: 'file' },
+      { name: 'ui-design', type: 'folder' }
+    ],
+    projects: [
+      { name: 'jarvis-dashboard', type: 'folder' },
+      { name: 'system-monitor', type: 'folder' }
+    ],
+    archives: [
+      { name: 'snapshot-001', type: 'folder' },
+      { name: 'notes.txt', type: 'file' }
+    ]
+  };
+
+  const folderList = document.getElementById('folderList');
+  const fileList = document.getElementById('fileList');
+  const titleNode = document.getElementById('fileManagerTitle');
+
+  if (!folderList || !fileList || !titleNode) return;
+
+  function selectFolder(folderName) {
+    const folderButtons = folderList.querySelectorAll('.folder-item');
+    folderButtons.forEach((button) => {
+      button.classList.toggle('active', button.dataset.folder === folderName);
+    });
+
+    titleNode.textContent = `/${folderName}`;
+    fileList.innerHTML = '';
+
+    const items = filesByFolder[folderName] || [];
+    items.forEach((item) => {
+      const listItem = document.createElement('li');
+      listItem.className = 'file-item';
+      listItem.dataset.name = item.name;
+      listItem.textContent = `${item.type === 'folder' ? '📁' : '📄'} ${item.name}`;
+      listItem.addEventListener('click', () => {
+        document.querySelectorAll('.file-item').forEach((node) => node.classList.remove('active'));
+        listItem.classList.add('active');
+        showNotification(`${item.name} selected in demo file manager.`);
+      });
+      fileList.appendChild(listItem);
+    });
+  }
+
+  folders.forEach((folder) => {
+    const item = document.createElement('li');
+    item.className = 'folder-item';
+    item.dataset.folder = folder.path;
+    item.textContent = `📂 ${folder.name}`;
+    if (folder.active) {
+      item.classList.add('active');
+    }
+    item.addEventListener('click', () => selectFolder(folder.path));
+    folderList.appendChild(item);
+  });
+
+  selectFolder('workspace');
+}
+
+function setupSettings() {
+  const accentButtons = document.querySelectorAll('.accent-option');
+  const compactToggle = document.getElementById('compactToggle');
+
+  accentButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      state.accent = button.dataset.accent || 'cyan';
+      localStorage.setItem(ACCENT_KEY, state.accent);
+      applyUiState();
+      showNotification(`Accent set to ${state.accent}.`);
+    });
+  });
+
+  compactToggle?.addEventListener('change', (event) => {
+    state.compact = Boolean(event.target.checked);
+    localStorage.setItem(COMPACT_KEY, String(state.compact));
+    applyUiState();
+    showNotification(state.compact ? 'Compact mode enabled.' : 'Compact mode disabled.');
+  });
+}
+
+function setupNotificationButton() {
+  const notificationsBtn = document.getElementById('notificationsBtn');
+  const settingsBtn = document.getElementById('settingsBtn');
+
+  notificationsBtn?.addEventListener('click', () => {
+    showNotification('System alerts: prototype environment is running normally.');
+  });
+
+  settingsBtn?.addEventListener('click', () => {
+    activateWindow('settings');
+    showNotification('Settings panel opened.');
+  });
+}
+
+function init() {
+  applyUiState();
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  setupGreeting();
+  setupAssistant();
+  buildFileBrowser();
+  setupSettings();
+  setupNotificationButton();
+  bindAppButtons();
+  bindWindowActions();
+
+  document.querySelectorAll('.window').forEach((windowNode) => {
+    if (windowNode.id === 'window-home') {
+      windowNode.classList.add('active');
+    }
+  });
+
+  showNotification('JARVIS OS prototype initialized.');
+}
+
+document.addEventListener('DOMContentLoaded', init);
+
+localStorage.setItem(THEME_KEY, state.theme);

@@ -1,36 +1,227 @@
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  text-align: center;
-  background: #f9f9f9;
-  color: #333;
-}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JARVITECH // JARVIS OS Prototype</title>
+    <meta
+      name="description"
+      content="A lightweight JARVIS-inspired desktop prototype built with HTML, CSS, and JavaScript."
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-theme="dark" data-accent="cyan">
+    <div class="desktop-shell">
+      <header class="topbar" aria-label="System top bar">
+        <div class="topbar__left">
+          <div class="brand" aria-label="System name">
+            <span class="brand__dot"></span>
+            <span>JARVIS OS</span>
+          </div>
+          <span class="status-tag">prototype</span>
+        </div>
 
-header {
-  background: #4CAF50;
-  color: white;
-  padding: 2rem;
-}
+        <div class="topbar__center" aria-live="polite">
+          <div id="clock" class="clock">--:--:--</div>
+          <div id="dateDisplay" class="date-display">Loading date...</div>
+        </div>
 
-main {
-  margin: 2rem;
-}
+        <div class="topbar__right">
+          <div class="status-pills" aria-label="System status indicators">
+            <span class="status-pill status-pill--online">Online</span>
+            <span class="status-pill">Secure</span>
+            <span class="status-pill">4GB Mode</span>
+          </div>
+          <button id="notificationsBtn" class="icon-button" type="button" aria-label="Notifications">
+            🔔
+          </button>
+          <button id="settingsBtn" class="icon-button" type="button" aria-label="Settings">
+            ⚙
+          </button>
+        </div>
+      </header>
 
-button {
-  padding: 10px 20px;
-  background: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
+      <main class="desktop" aria-label="Desktop workspace">
+        <aside class="desktop-icons" aria-label="Desktop shortcuts">
+          <button class="desktop-icon is-selected" type="button" data-target="home">
+            <span class="desktop-icon__glyph">⌂</span>
+            <span>Home</span>
+          </button>
+          <button class="desktop-icon" type="button" data-target="jarvis">
+            <span class="desktop-icon__glyph">◉</span>
+            <span>JARVIS</span>
+          </button>
+          <button class="desktop-icon" type="button" data-target="files">
+            <span class="desktop-icon__glyph">▣</span>
+            <span>Files</span>
+          </button>
+          <button class="desktop-icon" type="button" data-target="browser">
+            <span class="desktop-icon__glyph">◫</span>
+            <span>Browser</span>
+          </button>
+        </aside>
 
-button:hover {
-  background: #45a049;
-}
+        <section class="workspace" aria-label="Application windows">
+          <article class="window active" id="window-home" data-app="home">
+            <div class="window-header">
+              <div class="window-header__title">Home</div>
+              <div class="window-header__actions">
+                <button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize home panel">—</button>
+                <button type="button" class="window-action" data-window-action="close" aria-label="Close home panel">×</button>
+              </div>
+            </div>
+            <div class="window-content home-content">
+              <div class="hero-panel">
+                <p class="eyebrow">SYSTEM STATUS</p>
+                <h1>Welcome to JARVIS OS</h1>
+                <p>
+                  A lightweight, desktop-inspired prototype for a futuristic AI workspace.
+                </p>
+                <button id="greetBtn" type="button" class="primary-button">Greet System</button>
+                <p id="message" class="message" aria-live="polite"></p>
+              </div>
+            </div>
+          </article>
 
-footer {
-  background: #eee;
-  padding: 1rem;
-  margin-top: 2rem;
-}
+          <article class="window" id="window-jarvis" data-app="jarvis">
+            <div class="window-header">
+              <div class="window-header__title">JARVIS</div>
+              <div class="window-header__actions">
+                <button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize JARVIS panel">—</button>
+                <button type="button" class="window-action" data-window-action="close" aria-label="Close JARVIS panel">×</button>
+              </div>
+            </div>
+            <div class="window-content assistant-panel">
+              <div id="chatMessages" class="chat-messages" aria-live="polite"></div>
+              <form id="chatForm" class="chat-form">
+                <label class="sr-only" for="chatInput">Message JARVIS</label>
+                <input id="chatInput" type="text" placeholder="Ask JARVIS..." autocomplete="off" />
+                <button type="submit" class="primary-button">Send</button>
+              </form>
+              <button id="clearChatBtn" class="secondary-button" type="button">Clear</button>
+            </div>
+          </article>
+
+          <article class="window" id="window-files" data-app="files">
+            <div class="window-header">
+              <div class="window-header__title">Files</div>
+              <div class="window-header__actions">
+                <button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize files panel">—</button>
+                <button type="button" class="window-action" data-window-action="close" aria-label="Close files panel">×</button>
+              </div>
+            </div>
+            <div class="window-content file-manager">
+              <div class="file-manager__sidebar">
+                <h3>Folders</h3>
+                <ul id="folderList" class="folder-list"></ul>
+              </div>
+              <div class="file-manager__content">
+                <div class="file-manager__header">
+                  <h3 id="fileManagerTitle">/workspace</h3>
+                </div>
+                <ul id="fileList" class="file-list"></ul>
+              </div>
+            </div>
+          </article>
+
+          <article class="window" id="window-browser" data-app="browser">
+            <div class="window-header">
+              <div class="window-header__title">Browser</div>
+              <div class="window-header__actions">
+                <button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize browser panel">—</button>
+                <button type="button" class="window-action" data-window-action="close" aria-label="Close browser panel">×</button>
+              </div>
+            </div>
+            <div class="window-content browser-panel">
+              <div class="browser-bar">
+                <span>https://jarvis.local/prototype</span>
+              </div>
+              <div class="browser-page">
+                <h2>JARVIS Dashboard</h2>
+                <p>
+                  This browser window is a prototype panel for future assistant and system dashboards.
+                </p>
+                <div class="browser-cards">
+                  <div class="mini-card">
+                    <strong>Tasks</strong>
+                    <span>04 active</span>
+                  </div>
+                  <div class="mini-card">
+                    <strong>Memory</strong>
+                    <span>68%</span>
+                  </div>
+                  <div class="mini-card">
+                    <strong>Network</strong>
+                    <span>Secure</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <article class="window" id="window-settings" data-app="settings">
+            <div class="window-header">
+              <div class="window-header__title">Settings</div>
+              <div class="window-header__actions">
+                <button type="button" class="window-action" data-window-action="minimize" aria-label="Minimize settings panel">—</button>
+                <button type="button" class="window-action" data-window-action="close" aria-label="Close settings panel">×</button>
+              </div>
+            </div>
+            <div class="window-content settings-panel">
+              <div class="settings-group">
+                <h3>Appearance</h3>
+                <div class="accent-picker" aria-label="Accent selection">
+                  <button class="accent-option active" type="button" data-accent="cyan">Cyan</button>
+                  <button class="accent-option" type="button" data-accent="violet">Violet</button>
+                  <button class="accent-option" type="button" data-accent="emerald">Emerald</button>
+                </div>
+              </div>
+
+              <div class="settings-group">
+                <h3>Display</h3>
+                <label class="toggle-row">
+                  <span>Compact mode</span>
+                  <input type="checkbox" id="compactToggle" />
+                </label>
+              </div>
+
+              <div class="settings-group">
+                <h3>Prototype notes</h3>
+                <p>
+                  Configuration is stored locally in the browser for demonstration purposes only.
+                </p>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <nav class="dock" aria-label="Application dock">
+        <button class="dock-item active" type="button" data-target="home">
+          <span>⌂</span>
+          <small>Home</small>
+        </button>
+        <button class="dock-item" type="button" data-target="jarvis">
+          <span>◉</span>
+          <small>JARVIS</small>
+        </button>
+        <button class="dock-item" type="button" data-target="files">
+          <span>▣</span>
+          <small>Files</small>
+        </button>
+        <button class="dock-item" type="button" data-target="browser">
+          <span>◫</span>
+          <small>Browser</small>
+        </button>
+        <button class="dock-item" type="button" data-target="settings">
+          <span>⚙</span>
+          <small>Settings</small>
+        </button>
+      </nav>
+    </div>
+
+    <div id="notificationStack" class="notification-stack" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="note.js"></script>
+  </body>
+</html>
