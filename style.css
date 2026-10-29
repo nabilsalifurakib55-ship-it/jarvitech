@@ -96,7 +96,7 @@
               <form id="chatForm" class="chat-form">
                 <label class="sr-only" for="chatInput">Message JARVIS</label>
                 <input id="chatInput" type="text" placeholder="Ask JARVIS..." autocomplete="off" />
-                <button type="submit" class="primary-button">Send</button>
+                <button id="sendChatBtn" type="submit" class="primary-button">Send</button>
               </form>
               <button id="clearChatBtn" class="secondary-button" type="button">Clear</button>
             </div>

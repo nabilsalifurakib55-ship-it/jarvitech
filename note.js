@@ -353,6 +353,12 @@ button {
   border: none;
 }
 
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .secondary-button {
   background: rgba(255, 255, 255, 0.02);
   color: var(--text);
@@ -389,6 +395,7 @@ button {
   border-radius: 14px;
   line-height: 1.5;
   border: 1px solid var(--line);
+  white-space: pre-wrap;
 }
 
 .chat-bubble--user {
