@@ -1,17 +1,107 @@
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.venv/
-.venv
-.pytest_cache/
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
+import os
 
-# Secrets
-.env
-.env.*
-!.env.example
+load_dotenv()
 
-# Local editor files
-.vscode/
-.DS_Store
+app = FastAPI(title="JARVIS OS AI Backend", version="0.1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+class ChatMessage(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000)
+    history: list[dict] | None = None
+
+
+MAX_HISTORY_ITEMS = 8
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "service": "jarvis-ai-backend"}
+
+
+@app.post("/api/chat")
+async def chat_with_ai(payload: ChatMessage):
+    message = payload.message.strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
+    if len(message) > 2000:
+        raise HTTPException(status_code=400, detail="Message is too long. Keep it under 2000 characters.")
+
+    history = payload.history or []
+    if len(history) > MAX_HISTORY_ITEMS:
+        history = history[-MAX_HISTORY_ITEMS:]
+
+    api_key = os.getenv("OPENAI_API_KEY")
+    model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="AI API key is not configured. Set OPENAI_API_KEY in the local .env file before using the assistant.",
+        )
+
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=api_key)
+
+        messages = []
+        for item in history:
+            if isinstance(item, dict):
+                role = item.get("role")
+                content = item.get("content")
+                if role in {"user", "assistant"} and isinstance(content, str):
+                    messages.append({"role": role, "content": content})
+
+        messages.append({"role": "user", "content": message})
+
+        completion = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are JARVIS, a concise, helpful voice assistant for a desktop prototype. "
+                        "Never claim to control the host operating system or run terminal commands. "
+                        "Keep responses short, direct, and safe."
+                    ),
+                },
+                *messages,
+            ],
+            temperature=0.7,
+            max_tokens=250,
+        )
+
+        reply = completion.choices[0].message.content.strip()
+        if not reply:
+            raise HTTPException(status_code=502, detail="The AI provider returned an empty response.")
+
+        return {"reply": reply}
+
+    except Exception as exc:
+        error_text = str(exc)
+        lower = error_text.lower()
+        if "API key" in error_text or "authentication" in lower or "401" in error_text:
+            raise HTTPException(status_code=401, detail="The AI API key is invalid or rejected by the provider.")
+        if "429" in error_text or "rate limit" in lower:
+            raise HTTPException(status_code=429, detail="The AI provider rate limit was exceeded. Please try again shortly.")
+        if "model" in lower or "not found" in lower:
+            raise HTTPException(status_code=400, detail="The configured AI model is unavailable or invalid.")
+        raise HTTPException(status_code=502, detail=f"AI request failed: {error_text}")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app:app", host="127.0.0.1", port=8000, reload=True)
